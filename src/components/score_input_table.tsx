@@ -1,6 +1,6 @@
 "use client";
 import { createNewMatch } from "@/actions/matches";
-import { addPlayerScoreAndBJ, getPlayersForTeamId } from "@/actions/players";
+import { getPlayersForTeamId } from "@/actions/players";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowUpDown } from "lucide-react";
 import { PlayerCouple } from "@/types/player";
@@ -127,7 +127,29 @@ export const ScoreInputTable = (props: {
         props.tournamentId,
         team1?.id,
         team2?.id,
-        `${t1score}:${t2score}`
+        `${t1score}:${t2score}`,
+        [
+          {
+            playerId: team1Players.player1.id,
+            score: Number(values.team1player1score),
+            blowjobs: Number(values.team1player1BJ),
+          },
+          {
+            playerId: team1Players.player2.id,
+            score: Number(values.team1player2score),
+            blowjobs: Number(values.team1player2BJ),
+          },
+          {
+            playerId: team2Players.player1.id,
+            score: Number(values.team2player1score),
+            blowjobs: Number(values.team2player1BJ),
+          },
+          {
+            playerId: team2Players.player2.id,
+            score: Number(values.team2player2score),
+            blowjobs: Number(values.team2player2BJ),
+          },
+        ]
       );
       if (result.error) {
         toast({
@@ -137,26 +159,6 @@ export const ScoreInputTable = (props: {
         });
         return;
       }
-      await addPlayerScoreAndBJ(
-        team1Players.player1.id,
-        Number(values.team1player1score),
-        Number(values.team1player1BJ)
-      );
-      await addPlayerScoreAndBJ(
-        team1Players.player2.id,
-        Number(values.team1player2score),
-        Number(values.team1player2BJ)
-      );
-      await addPlayerScoreAndBJ(
-        team2Players.player1.id,
-        Number(values.team2player1score),
-        Number(values.team2player1BJ)
-      );
-      await addPlayerScoreAndBJ(
-        team2Players.player2.id,
-        Number(values.team2player2score),
-        Number(values.team2player2BJ)
-      );
 
       //
       // TODO: huge refactoring needed
