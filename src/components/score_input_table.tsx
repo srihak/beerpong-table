@@ -21,6 +21,9 @@ export const ScoreInputTable = (props: {
   const { toast } = useToast();
 
   const formRef = useRef(null);
+  // ref guards against double submits within the same tick, state drives the UI
+  const savingRef = useRef(false);
+  const [saving, setSaving] = useState(false);
   const [team1, setTeam1] = useState<Team | null>(null);
   const [team2, setTeam2] = useState<Team | null>(null);
   const [team1Players, setTeam1Players] =
@@ -70,6 +73,9 @@ export const ScoreInputTable = (props: {
 
   const handleSubmit = async (event: any) => {
     event.preventDefault(); // Prevent page reload
+    if (savingRef.current) {
+      return;
+    }
     const formData = new FormData(event.target);
 
     const values = Object.fromEntries(formData.entries());
@@ -108,61 +114,73 @@ export const ScoreInputTable = (props: {
       return;
     }
 
-    // create a match entry in the db
-    const t1score =
-      Number(values.team1player1score) + Number(values.team1player2score);
-    const t2score =
-      Number(values.team2player1score) + Number(values.team2player2score);
+    savingRef.current = true;
+    setSaving(true);
+    try {
+      // create a match entry in the db
+      const t1score =
+        Number(values.team1player1score) + Number(values.team1player2score);
+      const t2score =
+        Number(values.team2player1score) + Number(values.team2player2score);
 
-    await createNewMatch(
-      props.tournamentId,
-      team1?.id,
-      team2?.id,
-      `${t1score}:${t2score}`
-    );
-    await addPlayerScoreAndBJ(
-      team1Players.player1.id,
-      Number(values.team1player1score),
-      Number(values.team1player1BJ)
-    );
-    await addPlayerScoreAndBJ(
-      team1Players.player2.id,
-      Number(values.team1player2score),
-      Number(values.team1player2BJ)
-    );
-    await addPlayerScoreAndBJ(
-      team2Players.player1.id,
-      Number(values.team2player1score),
-      Number(values.team2player1BJ)
-    );
-    await addPlayerScoreAndBJ(
-      team2Players.player2.id,
-      Number(values.team2player2score),
-      Number(values.team2player2BJ)
-    );
+      await createNewMatch(
+        props.tournamentId,
+        team1?.id,
+        team2?.id,
+        `${t1score}:${t2score}`
+      );
+      await addPlayerScoreAndBJ(
+        team1Players.player1.id,
+        Number(values.team1player1score),
+        Number(values.team1player1BJ)
+      );
+      await addPlayerScoreAndBJ(
+        team1Players.player2.id,
+        Number(values.team1player2score),
+        Number(values.team1player2BJ)
+      );
+      await addPlayerScoreAndBJ(
+        team2Players.player1.id,
+        Number(values.team2player1score),
+        Number(values.team2player1BJ)
+      );
+      await addPlayerScoreAndBJ(
+        team2Players.player2.id,
+        Number(values.team2player2score),
+        Number(values.team2player2BJ)
+      );
 
-    //
-    // TODO: huge refactoring needed
-    //
+      //
+      // TODO: huge refactoring needed
+      //
 
-    // await createPlayerMatchEntry(
-    //   team1.player1_id,
-    //   MATCHID,
-    //   formData.get("team1player1score") || 0,
-    //   formData.get("team1player1BJ") || 0
-    //
+      // await createPlayerMatchEntry(
+      //   team1.player1_id,
+      //   MATCHID,
+      //   formData.get("team1player1score") || 0,
+      //   formData.get("team1player1BJ") || 0
+      //
 
-    // create 4 match-player entries in the db
+      // create 4 match-player entries in the db
 
-    // show success / error toast message
-    toast({
-      title: "Match saved successfully",
-      description: "Dobrá práce, kámobráško",
-      duration: 2000,
-    });
+      // show success / error toast message
+      toast({
+        title: "Match saved successfully",
+        description: "Dobrá práce, kámobráško",
+        duration: 2000,
+      });
 
-    // reset the form values to default
-    event.target.reset();
+      // reset the form values to default
+      event.target.reset();
+      // clear the teams too, so the same match can't be submitted again by accident
+      setTeam1(null);
+      setTeam2(null);
+      setTeam1Players(defaultPlayerState);
+      setTeam2Players(defaultPlayerState);
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
   };
 
   return (
@@ -277,6 +295,7 @@ export const ScoreInputTable = (props: {
         <div className="flex justify-end w-full mt-2">
           <SubmitDialog
             handleModalConfirm={handleModalConfirm}
+            disabled={saving}
             description={`Team ${team1?.name} : Team ${team2?.name}`}
           />
         </div>
