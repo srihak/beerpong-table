@@ -123,12 +123,20 @@ export const ScoreInputTable = (props: {
       const t2score =
         Number(values.team2player1score) + Number(values.team2player2score);
 
-      await createNewMatch(
+      const result = await createNewMatch(
         props.tournamentId,
         team1?.id,
         team2?.id,
         `${t1score}:${t2score}`
       );
+      if (result.error) {
+        toast({
+          title: "Error submitting match",
+          description: result.error,
+          duration: 2000,
+        });
+        return;
+      }
       await addPlayerScoreAndBJ(
         team1Players.player1.id,
         Number(values.team1player1score),
