@@ -2,6 +2,7 @@
 import { createNewMatch } from "@/actions/matches";
 import { addPlayerScoreAndBJ, getPlayersForTeamId } from "@/actions/players";
 import { useToast } from "@/hooks/use-toast";
+import { ArrowUpDown } from "lucide-react";
 import { PlayerCouple } from "@/types/player";
 import { Team } from "@/types/team";
 import { useRef, useState } from "react";
@@ -53,6 +54,13 @@ export const ScoreInputTable = (props: {
     }
   };
 
+  const swapPlayers = (playerSetter: any) => {
+    playerSetter((players: PlayerCouple) => ({
+      player1: players.player2,
+      player2: players.player1,
+    }));
+  };
+
   function handleModalConfirm() {
     if (formRef?.current) {
       //@ts-ignore
@@ -85,6 +93,21 @@ export const ScoreInputTable = (props: {
       return;
     }
 
+    // players are read from state (not the team) so a swapped order is respected
+    if (
+      !team1Players.player1 ||
+      !team1Players.player2 ||
+      !team2Players.player1 ||
+      !team2Players.player2
+    ) {
+      toast({
+        title: "Error submitting match",
+        description: "Players not loaded",
+        duration: 2000,
+      });
+      return;
+    }
+
     // create a match entry in the db
     const t1score =
       Number(values.team1player1score) + Number(values.team1player2score);
@@ -98,22 +121,22 @@ export const ScoreInputTable = (props: {
       `${t1score}:${t2score}`
     );
     await addPlayerScoreAndBJ(
-      team1.player1_id!,
+      team1Players.player1.id,
       Number(values.team1player1score),
       Number(values.team1player1BJ)
     );
     await addPlayerScoreAndBJ(
-      team1.player2_id!,
+      team1Players.player2.id,
       Number(values.team1player2score),
       Number(values.team1player2BJ)
     );
     await addPlayerScoreAndBJ(
-      team2.player1_id!,
+      team2Players.player1.id,
       Number(values.team2player1score),
       Number(values.team2player1BJ)
     );
     await addPlayerScoreAndBJ(
-      team2.player2_id!,
+      team2Players.player2.id,
       Number(values.team2player2score),
       Number(values.team2player2BJ)
     );
@@ -165,6 +188,15 @@ export const ScoreInputTable = (props: {
                     </option>
                   ))}
                 </select>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-ghost ml-1"
+                  title="Prohodit hráče"
+                  onClick={() => swapPlayers(setTeam1Players)}
+                  disabled={!team1Players.player1}
+                >
+                  <ArrowUpDown size={16} />
+                </button>
               </th>
               <th colSpan={2} className="py-2 px-4 border-b">
                 Skóre
@@ -185,6 +217,15 @@ export const ScoreInputTable = (props: {
                     </option>
                   ))}
                 </select>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-ghost ml-1"
+                  title="Prohodit hráče"
+                  onClick={() => swapPlayers(setTeam2Players)}
+                  disabled={!team2Players.player1}
+                >
+                  <ArrowUpDown size={16} />
+                </button>
               </th>
             </tr>
           </thead>
