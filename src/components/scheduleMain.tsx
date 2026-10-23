@@ -11,8 +11,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { downloadSchedulePdf } from "@/lib/schedulePdf";
 import Link from "next/link";
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { ScheduleGenerateForm } from "./scheduleGenerateForm";
 
 type Props = {
@@ -83,6 +84,8 @@ export const ScheduleMain = ({
   schedule,
   children,
 }: Props) => {
+  const [downloading, setDownloading] = useState(false);
+
   const rounds = new Map<number, ScheduledMatchWithResult[]>();
   for (const m of schedule) {
     rounds.set(m.round, [...(rounds.get(m.round) ?? []), m]);
@@ -96,6 +99,15 @@ export const ScheduleMain = ({
       ? null
       : (roundNumbers.find((r) => r > currentRound) ?? null);
   const usedTables = Math.max(1, ...schedule.map((m) => m.tableNumber));
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      await downloadSchedulePdf(tournamentName, schedule);
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -111,6 +123,13 @@ export const ScheduleMain = ({
             <Link href={`/${tournamentId}/stats`} className="btn btn-secondary">
               Statistiky turnaje
             </Link>
+            <button
+              className="btn btn-secondary"
+              disabled={downloading}
+              onClick={handleDownload}
+            >
+              {downloading ? "Připravuji PDF..." : "Stáhnout PDF"}
+            </button>
           </div>
         </div>
       </div>
