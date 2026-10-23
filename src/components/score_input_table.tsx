@@ -5,13 +5,19 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowUpDown } from "lucide-react";
 import { PlayerCouple } from "@/types/player";
 import { Team } from "@/types/team";
-import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { SubmitDialog } from "./submit_dialog";
 import { TableInput } from "./table_input";
 
 export const ScoreInputTable = (props: {
   teams: Team[];
   tournamentId: number;
+  // preselected teams, e.g. when opened from a match in the schedule
+  initialTeam1Id?: number;
+  initialTeam2Id?: number;
+  // where to go after a successful save; stays on the form when unset
+  returnTo?: string;
 }) => {
   const defaultPlayerState = {
     player1: null,
@@ -19,6 +25,7 @@ export const ScoreInputTable = (props: {
   };
 
   const { toast } = useToast();
+  const router = useRouter();
 
   const formRef = useRef(null);
   // ref guards against double submits within the same tick, state drives the UI
@@ -56,6 +63,17 @@ export const ScoreInputTable = (props: {
       playerSetter(defaultPlayerState);
     }
   };
+
+  useEffect(() => {
+    if (props.initialTeam1Id) {
+      onSelectChange(setTeam1, setTeam1Players, props.initialTeam1Id);
+    }
+    if (props.initialTeam2Id) {
+      onSelectChange(setTeam2, setTeam2Players, props.initialTeam2Id);
+    }
+    // only on mount: later changes come from the selects
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const swapPlayers = (playerSetter: any) => {
     playerSetter((players: PlayerCouple) => ({
@@ -187,6 +205,9 @@ export const ScoreInputTable = (props: {
       setTeam2(null);
       setTeam1Players(defaultPlayerState);
       setTeam2Players(defaultPlayerState);
+      if (props.returnTo) {
+        router.push(props.returnTo);
+      }
     } finally {
       savingRef.current = false;
       setSaving(false);

@@ -3,6 +3,7 @@
 import { db } from "@/db";
 import { match, player, player_match_score } from "@/db/schema";
 import { and, eq, or, sql } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export type PlayerMatchPoints = {
@@ -66,6 +67,7 @@ export const createNewMatch = async (
         .where(eq(player.id, p.playerId));
     }
   });
+  revalidatePath(`/${tournamentId}`);
   return { success: true };
 };
 
