@@ -11,7 +11,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { downloadSchedulePdf } from "@/lib/schedulePdf";
+import {
+  downloadSchedulePdf,
+  downloadScheduleSlidesPdf,
+} from "@/lib/schedulePdf";
 import Link from "next/link";
 import { ReactNode, useState } from "react";
 import { ScheduleGenerateForm } from "./scheduleGenerateForm";
@@ -84,7 +87,7 @@ export const ScheduleMain = ({
   schedule,
   children,
 }: Props) => {
-  const [downloading, setDownloading] = useState(false);
+  const [downloading, setDownloading] = useState<"pdf" | "slides" | null>(null);
 
   const rounds = new Map<number, ScheduledMatchWithResult[]>();
   for (const m of schedule) {
@@ -100,12 +103,14 @@ export const ScheduleMain = ({
       : (roundNumbers.find((r) => r > currentRound) ?? null);
   const usedTables = Math.max(1, ...schedule.map((m) => m.tableNumber));
 
-  const handleDownload = async () => {
-    setDownloading(true);
+  const handleDownload = async (kind: "pdf" | "slides") => {
+    setDownloading(kind);
     try {
-      await downloadSchedulePdf(tournamentName, schedule);
+      const download =
+        kind === "pdf" ? downloadSchedulePdf : downloadScheduleSlidesPdf;
+      await download(tournamentName, schedule);
     } finally {
-      setDownloading(false);
+      setDownloading(null);
     }
   };
 
@@ -125,10 +130,19 @@ export const ScheduleMain = ({
             </Link>
             <button
               className="btn btn-secondary"
-              disabled={downloading}
-              onClick={handleDownload}
+              disabled={downloading !== null}
+              onClick={() => handleDownload("pdf")}
             >
-              {downloading ? "Připravuji PDF..." : "Stáhnout PDF"}
+              {downloading === "pdf" ? "Připravuji PDF..." : "Stáhnout PDF"}
+            </button>
+            <button
+              className="btn btn-secondary"
+              disabled={downloading !== null}
+              onClick={() => handleDownload("slides")}
+            >
+              {downloading === "slides"
+                ? "Připravuji prezentaci..."
+                : "Prezentace 16:9"}
             </button>
           </div>
         </div>
